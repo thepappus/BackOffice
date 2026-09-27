@@ -1,0 +1,38 @@
+id: nearai-topix-decimal-prices
+module: nearai
+description: >
+  TOPIX futures, whose prices carry one decimal place on a 0.5 tick with a 10,000
+  multiplier. Exists to catch implementations that hold prices as binary floats:
+  2761.0 - 2750.5 must be exactly 10.5, giving exactly 105,000 yen.
+effective_date: 2026-06-02
+provenance:
+  kind: derived
+  source: >
+    TOPIX futures contract specification (multiplier 10,000; minimum price
+    increment 0.5) applied to the daily mark-to-market rule.
+  note: Illustrative prices chosen to land on half-tick boundaries.
+
+input:
+  series:
+    product: TOPIX
+    contract_month: "2026-06"
+  events:
+    - { type: open,       date: 2026-06-01, side: long, quantity: 1, price: "2750.5" }
+    - { type: settlement, date: 2026-06-01, price: "2761.0" }
+    - { type: close,      date: 2026-06-02, side: long, quantity: 1, price: "2755.5" }
+
+expected:
+  marks:
+    - { date: 2026-06-01, kind: open_day, side: long, quantity: 1, reference_price: "2750.5", mark_price: "2761.0", amount_jpy: 105000 }
+  closes:
+    - date: 2026-06-02
+      side: long
+      quantity: 1
+      open_trade_price: "2750.5"
+      book_price_at_close: "2761.0"
+      close_price: "2755.5"
+      settlement_jpy: -55000
+      realized_pnl_jpy: 50000
+  total_cash_jpy: 50000
+  total_realized_jpy: 50000
+  invariant_holds: true

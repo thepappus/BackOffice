@@ -1,0 +1,38 @@
+id: nearai-futures-day-trade
+module: nearai
+description: >
+  Position opened and closed on the same business day. No mark-to-market ever
+  applies, because the position does not exist at any settlement. Settlement cash
+  and realised P&L are therefore equal, and the marks list is empty.
+effective_date: 2026-06-01
+provenance:
+  kind: published_rule
+  source: >
+    Mark-to-market applies to positions carried past the close of the day
+    session (日中立会終了時点で持ち越した建玉). A position closed intraday is
+    never marked.
+  url: https://faq.sbisec.co.jp/answer/5eafd116171ba70012b8fb25
+  note: Prices illustrative; the absence of any mark is the assertion.
+
+input:
+  series:
+    product: NK225
+    contract_month: "2026-06"
+  events:
+    - { type: open,  date: 2026-06-01, side: long, quantity: 1, price: "38000" }
+    - { type: close, date: 2026-06-01, side: long, quantity: 1, price: "38150" }
+
+expected:
+  marks: []
+  closes:
+    - date: 2026-06-01
+      side: long
+      quantity: 1
+      open_trade_price: "38000"
+      book_price_at_close: "38000"
+      close_price: "38150"
+      settlement_jpy: 150000
+      realized_pnl_jpy: 150000
+  total_cash_jpy: 150000
+  total_realized_jpy: 150000
+  invariant_holds: true

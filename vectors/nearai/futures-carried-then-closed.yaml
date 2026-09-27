@@ -1,0 +1,60 @@
+id: nearai-futures-carried-then-closed
+module: nearai
+description: >
+  Long futures opened, carried one night, then closed before expiry. Exercises
+  all three reference-price cases in one sequence: trade price on the open day,
+  previous settlement while carried, and previous settlement against the actual
+  closing trade price on the closing day.
+effective_date: 2026-06-03
+provenance:
+  kind: published_rule
+  source: >
+    Daily mark-to-market (値洗い) reference-price rule: on the day a position is
+    opened the difference is taken against the trade price; from the next
+    business day against the previous business day's settlement price.
+  url: https://faq.sbisec.co.jp/answer/5eafd116171ba70012b8fb25
+  note: >
+    Prices are illustrative. What is being asserted is the reference-price
+    selection and the resulting split between settlement cash and realised P&L,
+    both of which follow from the published rule.
+
+input:
+  series:
+    product: NK225
+    contract_month: "2026-06"
+  events:
+    - { type: open,       date: 2026-06-01, side: long, quantity: 1, price: "38000" }
+    - { type: settlement, date: 2026-06-01, price: "38200" }
+    - { type: settlement, date: 2026-06-02, price: "37900" }
+    - { type: close,      date: 2026-06-03, side: long, quantity: 1, price: "38500" }
+
+expected:
+  marks:
+    - date: 2026-06-01
+      kind: open_day
+      side: long
+      quantity: 1
+      reference_price: "38000"
+      mark_price: "38200"
+      amount_jpy: 200000
+    - date: 2026-06-02
+      kind: carried
+      side: long
+      quantity: 1
+      reference_price: "38200"
+      mark_price: "37900"
+      amount_jpy: -300000
+  closes:
+    - date: 2026-06-03
+      side: long
+      quantity: 1
+      open_trade_price: "38000"
+      book_price_at_close: "37900"
+      close_price: "38500"
+      # Only the final day's move settles in cash; the earlier days already did.
+      settlement_jpy: 600000
+      # Whole-life P&L, measured from the original trade price.
+      realized_pnl_jpy: 500000
+  total_cash_jpy: 500000
+  total_realized_jpy: 500000
+  invariant_holds: true

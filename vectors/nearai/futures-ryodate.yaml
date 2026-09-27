@@ -1,0 +1,59 @@
+id: nearai-futures-ryodate
+module: nearai
+description: >
+  両建て (ryodate) — a long and a short in the same series held simultaneously,
+  because the second order was designated 新規 (shinki, open) rather than 返済
+  (hensai, close). Both legs exist, both are marked every day, and their marks
+  offset in cash while each leg keeps its own trade price for realised P&L. The
+  net quantity is zero throughout, which is exactly why net quantity is not how
+  positions are held.
+effective_date: 2026-06-03
+provenance:
+  kind: published_rule
+  source: >
+    Japanese listed derivatives orders carry an open/close designation; a sell
+    designated 新規 against an existing long creates a short position rather than
+    closing the long.
+  note: >
+    Illustrative prices. The assertion is the absence of automatic netting and
+    the per-leg realised P&L.
+
+input:
+  series:
+    product: NK225
+    contract_month: "2026-06"
+  events:
+    - { type: open,       date: 2026-06-01, side: long,  quantity: 1, price: "38000" }
+    # Designated 新規, not 返済 — this does NOT close the long.
+    - { type: open,       date: 2026-06-01, side: short, quantity: 1, price: "38100" }
+    - { type: settlement, date: 2026-06-01, price: "38200" }
+    - { type: settlement, date: 2026-06-02, price: "37900" }
+    - { type: close,      date: 2026-06-03, side: long,  quantity: 1, price: "38000" }
+    - { type: close,      date: 2026-06-03, side: short, quantity: 1, price: "38000" }
+
+expected:
+  marks:
+    - { date: 2026-06-01, kind: open_day, side: long,  quantity: 1, reference_price: "38000", mark_price: "38200", amount_jpy: 200000 }
+    - { date: 2026-06-01, kind: open_day, side: short, quantity: 1, reference_price: "38100", mark_price: "38200", amount_jpy: -100000 }
+    - { date: 2026-06-02, kind: carried,  side: long,  quantity: 1, reference_price: "38200", mark_price: "37900", amount_jpy: -300000 }
+    - { date: 2026-06-02, kind: carried,  side: short, quantity: 1, reference_price: "38200", mark_price: "37900", amount_jpy: 300000 }
+  closes:
+    - date: 2026-06-03
+      side: long
+      quantity: 1
+      open_trade_price: "38000"
+      book_price_at_close: "37900"
+      close_price: "38000"
+      settlement_jpy: 100000
+      realized_pnl_jpy: 0
+    - date: 2026-06-03
+      side: short
+      quantity: 1
+      open_trade_price: "38100"
+      book_price_at_close: "37900"
+      close_price: "38000"
+      settlement_jpy: -100000
+      realized_pnl_jpy: 100000
+  total_cash_jpy: 100000
+  total_realized_jpy: 100000
+  invariant_holds: true

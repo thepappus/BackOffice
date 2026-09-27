@@ -1,0 +1,50 @@
+id: nearai-futures-held-to-sq
+module: nearai
+description: >
+  Long futures carried through four settlements and held to expiry, settled at the
+  SQ. The final step is one more mark, from the previous settlement price to the
+  SQ, after which the position ceases to exist. 2026-06-12 is the second Friday of
+  the contract month.
+effective_date: 2026-06-12
+provenance:
+  kind: published_rule
+  source: >
+    Final settlement of index futures is against the SQ (特別清算数値), which is
+    calculated from the opening prices of the index constituents on SQ day —
+    normally the second Friday of the contract month — and is not final until
+    every constituent has opened.
+  note: >
+    Illustrative prices and SQ value. The rule being asserted is that the final
+    step references the previous settlement price, not the original trade price,
+    and that the position is closed rather than carried.
+
+input:
+  series:
+    product: NK225
+    contract_month: "2026-06"
+  events:
+    - { type: open,             date: 2026-06-08, side: long, quantity: 1, price: "38000" }
+    - { type: settlement,       date: 2026-06-08, price: "38100" }
+    - { type: settlement,       date: 2026-06-09, price: "38050" }
+    - { type: settlement,       date: 2026-06-10, price: "38300" }
+    - { type: settlement,       date: 2026-06-11, price: "38250" }
+    - { type: final_settlement, date: 2026-06-12, price: "38500" }
+
+expected:
+  marks:
+    - { date: 2026-06-08, kind: open_day, side: long, quantity: 1, reference_price: "38000", mark_price: "38100", amount_jpy: 100000 }
+    - { date: 2026-06-09, kind: carried,  side: long, quantity: 1, reference_price: "38100", mark_price: "38050", amount_jpy: -50000 }
+    - { date: 2026-06-10, kind: carried,  side: long, quantity: 1, reference_price: "38050", mark_price: "38300", amount_jpy: 250000 }
+    - { date: 2026-06-11, kind: carried,  side: long, quantity: 1, reference_price: "38300", mark_price: "38250", amount_jpy: -50000 }
+  closes:
+    - date: 2026-06-12
+      side: long
+      quantity: 1
+      open_trade_price: "38000"
+      book_price_at_close: "38250"
+      close_price: "38500"
+      settlement_jpy: 250000
+      realized_pnl_jpy: 500000
+  total_cash_jpy: 500000
+  total_realized_jpy: 500000
+  invariant_holds: true
